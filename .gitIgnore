@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+tf-env/
+.env
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.toast
+.lucid
+.precision
+.prospector
+.pylintrc
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# ML/Models
+# best_model_skenario3.keras  # Uncomment if you don't want to push the model file (20MB)
+*.h5
+*.pth
+*.weights
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+error_log.txt
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo

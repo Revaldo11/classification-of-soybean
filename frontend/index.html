@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klasifikasi Biji Kedelai AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="floating-bg">
+        <div class="fruit" style="top: 10%; left: 15%; font-size: 2rem;">🌱</div>
+        <div class="fruit" style="top: 20%; right: 10%; font-size: 2.5rem;">🌿</div>
+        <div class="fruit" style="bottom: 15%; left: 20%; font-size: 2.2rem;">🪴</div>
+        <div class="fruit" style="bottom: 25%; right: 15%; font-size: 1.8rem;">☘️</div>
+        <div class="fruit" style="top: 50%; left: 5%; font-size: 1.5rem;">🍂</div>
+        <div class="fruit" style="top: 60%; right: 5%; font-size: 2rem;">🍃</div>
+    </div>
+
+    <main class="container">
+        <header class="text-center fade-in">
+            <h1 class="title">
+                <span class="icon">🍎</span>
+                Klasifikasi Biji Kedelai AI
+            </h1>
+            <p class="subtitle">
+                Deteksi dan kenali kualitas biji kedelai menggunakan teknologi AI terdepan.<br>
+                Upload gambar atau ambil foto untuk mendapatkan informasi lengkap tentang kedelai.
+            </p>
+            <div id="modelStatusBadge" class="status-badge">
+                ⏳ Memeriksa status model...
+            </div>
+        </header>
+
+        <!-- Main Upload/Preview Card -->
+        <section id="uploadSection" class="card fade-in slide-up">
+            <div id="dropZone" class="upload-inner">
+                <div class="upload-icon">🖼️</div>
+                <h2 class="upload-title">Upload Gambar Kedelai</h2>
+                <p class="upload-desc">Pilih gambar dari galeri atau ambil foto langsung</p>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        <span class="btn-icon">📁</span> Pilih dari Galeri
+                    </button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('cameraInput').click()">
+                        <span class="btn-icon">📷</span> Ambil Foto
+                    </button>
+                </div>
+            </div>
+
+            <div id="previewContainer" class="hidden">
+                <div class="preview-box">
+                    <div class="close-btn" onclick="closePreview()">×</div>
+                    <img id="imagePreview" alt="Preview" class="image-preview">
+                </div>
+                <div class="action-group">
+                    <button id="btnDetect" class="btn btn-detect" onclick="triggerDetection()">
+                        <span class="btn-icon">⚡</span> Deteksi Buah
+                    </button>
+                    <button class="btn btn-reset" onclick="resetForm()">
+                        <span class="btn-icon">🔄</span> Reset
+                    </button>
+                </div>
+            </div>
+
+            <input type="file" id="fileInput" accept="image/png, image/jpeg, image/jpg, image/webp" hidden onchange="handleFileSelect(event)">
+            <input type="file" id="cameraInput" accept="image/png, image/jpeg, image/jpg, image/webp" capture="environment" hidden onchange="handleFileSelect(event)">
+        </section>
+
+        <!-- Loading Section -->
+        <section id="loadingSection" class="hidden fade-in text-center">
+            <div class="spinner"></div>
+            <p>Menganalisis gambar...</p>
+        </section>
+
+        <!-- Result Section -->
+        <section id="resultSection" class="hidden fade-in">
+            <div class="card result-card text-center">
+                <div class="result-emoji" id="resEmoji">🥜</div>
+                <h2 class="result-class" id="resClass">Kedelai Utuh</h2>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Kelas Dataset</div>
+                        <div class="metric-value" id="resLabel">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Grade</div>
+                        <div class="metric-value" id="resGrade">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Akurasi</div>
+                        <div class="metric-value" id="resConf">-</div>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-header">
+                            <span class="info-icon blue">⚡</span>
+                            <h3>Definisi</h3>
+                        </div>
+                        <p id="resDef">Deskripsi kedelai akan muncul di sini.</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-header">
+                            <span class="info-icon green">📈</span>
+                            <h3>Kandungan Nutrisi</h3>
+                        </div>
+                        <p id="resNut">Nutrisi kedelai akan muncul di sini.</p>
+                    </div>
+                    <div class="info-card wide">
+                        <div class="info-header">
+                            <span class="info-icon purple">💜</span>
+                            <h3>Manfaat Kesehatan</h3>
+                        </div>
+                        <p id="resBen">Manfaat kesehatan akan muncul di sini.</p>
+                    </div>
+                </div>
+
+                <div class="trust-container">
+                    <div class="trust-header">
+                        <span>Tingkat Kepercayaan</span>
+                        <span id="resConfText">98%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="resBar"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer / Instructions -->
+        <footer class="footer text-center fade-in">
+            <div class="instruction-card">
+                <div class="info-header">
+                    <span class="info-icon blue">ℹ️</span>
+                    <h3>Cara Penggunaan</h3>
+                </div>
+                <p>Upload gambar kedelai satu per satu untuk hasil yang maksimal. Pastikan pencahayaan cukup dan gambar fokus pada biji kedelai.</p>
+            </div>
+        </footer>
+    </main>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
