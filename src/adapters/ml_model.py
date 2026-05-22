@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from PIL import Image
-from src.domain.entities import get_grade
 
 class MLModelAdapter:
     def __init__(self, model_path: str = "best_model_skenario3.keras", mapping_path: str = "class_mapping.csv"):

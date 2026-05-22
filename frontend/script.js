@@ -51,9 +51,8 @@ async function triggerDetection() {
         const data = await response.json();
         
         // Populate Result Card
-        document.getElementById('resClass').textContent = data.grade; 
+        document.getElementById('resClass').textContent = data.name; 
         document.getElementById('resLabel').textContent = data.label;
-        document.getElementById('resGrade').textContent = data.grade;
         
         const confValue = typeof data.confidence === 'number' 
             ? data.confidence.toFixed(2) + '%' 
@@ -66,16 +65,16 @@ async function triggerDetection() {
         document.getElementById('resNut').textContent = data.nutrition;
         document.getElementById('resBen').textContent = data.benefits;
 
-        // Set Emoji based on grade
+        // Set Emoji based on name
         const emojiMap = {
-            "Grade A": "🌟",
-            "Grade B": "🌱",
-            "Grade C": "🍂",
-            "Pecah": "💔",
-            "Busuk": "🍄",
-            "Tidak Terdeteksi": "❓"
+            "Kedelai Utuh": "🌟",
+            "Kedelai Belum Matang": "🌱",
+            "Kedelai Kulit Rusak": "🍂",
+            "Kedelai Pecah": "💔",
+            "Kedelai Bercak": "🍄",
+            "Bukan Biji Kedelai": "❓"
         };
-        document.getElementById('resEmoji').textContent = emojiMap[data.grade] || "🥜";
+        document.getElementById('resEmoji').textContent = emojiMap[data.name] || "🥜";
 
         // Progress Bar
         setTimeout(() => {
