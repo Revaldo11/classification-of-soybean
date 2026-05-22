@@ -24,7 +24,7 @@ class PredictSoybeanUseCase:
         return {
             "label": final_label,
             "confidence": final_conf,
-            "grade": metadata["grade"],
+            "name": metadata["name"],
             "definition": metadata["definition"],
             "nutrition": metadata["nutrition"],
             "benefits": metadata["benefits"]
