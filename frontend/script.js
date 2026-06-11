@@ -1,4 +1,5 @@
 let selectedFile = null;
+let modelReady = false;
 
 async function handleFileSelect(event) {
     const file = event.target.files[0];
@@ -28,6 +29,10 @@ async function handleFileSelect(event) {
 
 async function triggerDetection() {
     if (!selectedFile) return;
+    if (!modelReady) {
+        alert('Model masih dimuat. Silakan tunggu sampai status model siap.');
+        return;
+    }
 
     const loadingSection = document.getElementById('loadingSection');
     const resultSection = document.getElementById('resultSection');
@@ -46,7 +51,16 @@ async function triggerDetection() {
             body: formData
         });
         
-        if (!response.ok) throw new Error(`API error! status: ${response.status}`);
+        if (!response.ok) {
+            let message = `API error! status: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                message = errorData.detail || message;
+            } catch (parseError) {
+                // Keep the HTTP status message when the response is not JSON.
+            }
+            throw new Error(message);
+        }
         
         const data = await response.json();
         
@@ -99,7 +113,7 @@ async function triggerDetection() {
         
     } catch (error) {
         console.error('Error:', error);
-        alert('Gagal menganalisis gambar. Pastikan server backend berjalan.');
+        alert(`Gagal menganalisis gambar. ${error.message}`);
         loadingSection.classList.add('hidden');
         btnDetect.disabled = false;
     }
@@ -119,23 +133,60 @@ function closePreview() {
     document.getElementById('resultSection').classList.add('hidden');
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+function setModelStatusBadge(text, backgroundColor, color) {
     const badge = document.getElementById('modelStatusBadge');
+    badge.textContent = text;
+    badge.style.backgroundColor = backgroundColor;
+    badge.style.color = color;
+}
+
+async function fetchWithTimeout(url, timeoutMs = 5000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
-        const response = await fetch('/api/status');
-        const data = await response.json();
-        if (data.status === 'ready') {
-            badge.textContent = '✅ Model berhasil dimuat';
-            badge.style.backgroundColor = '#dcfce7';
-            badge.style.color = '#166534';
-        } else {
-            badge.textContent = '❌ Model gagal dimuat';
-            badge.style.backgroundColor = '#fee2e2';
-            badge.style.color = '#991b1b';
-        }
-    } catch (error) {
-        badge.textContent = '⚠️ API tidak dapat dihubungi';
-        badge.style.backgroundColor = '#fee2e2';
-        badge.style.color = '#991b1b';
+        const response = await fetch(url, { signal: controller.signal });
+        return response;
+    } finally {
+        clearTimeout(timeoutId);
     }
+}
+
+async function checkModelStatus() {
+    const maxAttempts = 30;
+    const retryDelayMs = 2000;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            const response = await fetchWithTimeout('/api/status');
+            if (!response.ok) throw new Error(`API error! status: ${response.status}`);
+
+            const data = await response.json();
+
+            if (data.status === 'ready') {
+                modelReady = true;
+                setModelStatusBadge('✅ Model berhasil dimuat', '#dcfce7', '#166534');
+                return;
+            }
+
+            if (data.status === 'error') {
+                modelReady = false;
+                setModelStatusBadge('❌ Model gagal dimuat', '#fee2e2', '#991b1b');
+                return;
+            }
+
+            setModelStatusBadge('⏳ Model sedang dimuat...', '#fef3c7', '#92400e');
+        } catch (error) {
+            modelReady = false;
+            setModelStatusBadge('⚠️ Menghubungkan ke API...', '#fef3c7', '#92400e');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+    }
+
+    setModelStatusBadge('⚠️ API/model belum siap. Coba muat ulang halaman.', '#fee2e2', '#991b1b');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    checkModelStatus();
 });
