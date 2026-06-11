@@ -4,10 +4,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from io import BytesIO
 from PIL import Image
-from src.adapters.ml_model import MLModelAdapter
-from src.use_cases.predict import PredictSoybeanUseCase
+from threading import Lock, Thread
 
 app = FastAPI(title="Soybean Classification API")
+
+model_state = {
+    "status": "loading",
+    "message": "Model sedang dimuat",
+    "predict_use_case": None,
+}
+model_state_lock = Lock()
 
 # Configure CORS
 app.add_middleware(
@@ -18,22 +24,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-try:
-    ml_adapter = MLModelAdapter(model_path="best_model_skenario3.keras", mapping_path="class_mapping.csv")
-    predict_use_case = PredictSoybeanUseCase(ml_adapter)
-except Exception as e:
-    print(f"Error loading model: {e}")
-    predict_use_case = None
+def load_model_background():
+    try:
+        from src.adapters.ml_model import MLModelAdapter
+        from src.use_cases.predict import PredictSoybeanUseCase
+
+        ml_adapter = MLModelAdapter(
+            model_path="best_model_skenario3.keras",
+            mapping_path="class_mapping.csv"
+        )
+        predict_use_case = PredictSoybeanUseCase(ml_adapter)
+
+        with model_state_lock:
+            model_state["status"] = "ready"
+            model_state["message"] = "Model berhasil dimuat"
+            model_state["predict_use_case"] = predict_use_case
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        with model_state_lock:
+            model_state["status"] = "error"
+            model_state["message"] = str(e)
+            model_state["predict_use_case"] = None
+
+
+Thread(target=load_model_background, daemon=True).start()
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 @app.get("/api/status")
 def get_status():
-    if predict_use_case is not None:
-        return {"status": "ready", "message": "Model is loaded and ready"}
-    else:
-        return {"status": "error", "message": "Model failed to load"}
+    with model_state_lock:
+        return {
+            "status": model_state["status"],
+            "message": model_state["message"],
+        }
 
 @app.get("/")
 def read_root():
@@ -41,6 +66,13 @@ def read_root():
 
 @app.post("/predict")
 async def predict_image(file: UploadFile = File(...)):
+    with model_state_lock:
+        status = model_state["status"]
+        predict_use_case = model_state["predict_use_case"]
+
+    if status == "loading":
+        raise HTTPException(status_code=503, detail="Model masih dimuat. Silakan coba beberapa saat lagi.")
+
     if not predict_use_case:
         raise HTTPException(status_code=500, detail="Model is not loaded.")
         
